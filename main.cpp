@@ -1,321 +1,162 @@
 #include <iostream>
-#include <string>
 #include <cstdlib>
 #include <ctime>
+#include <string>
 using namespace std;
+
+#define SIZE 29 // Кількість елементів: (10 * 8) % 51 = 29
 
 // Структура для зберігання даних про туриста
 struct Tourist {
-    string passport;    
-    string surname;      
-    int days;          
+    string passport; // Код паспорта (2 літери + 6 цифр)
+    int days;       // Кількість днів
 };
 
-// Вузол однозв’язного списку
-struct Node {
-    Tourist data;
-    Node* next;
-    Node(Tourist t) : data(t), next(nullptr) {}
-};
-
-// Клас для роботи з однозв’язним списком
-class SinglyLinkedList {
-private:
-    Node* head;
-    int size;
-
-public:
-    SinglyLinkedList() : head(nullptr), size(0) {}
-
-    // Очистити список
-    void clear() {
-        while (head) {
-            Node* temp = head;
-            head = head->next;
-            delete temp;
-        }
-        size = 0;
-        display();
+// Функція для генерації коду паспорта
+string generatePassport() {
+    string passport = "";
+    passport += char('A' + rand() % 26); // Перша літера
+    passport += char('A' + rand() % 26); // Друга літера
+    for (int i = 0; i < 6; i++) {
+        passport += to_string(rand() % 10); // 6 цифр
     }
-
-    // Додати елемент до списку (в кінець)
-    void append(Tourist t) {
-        Node* newNode = new Node(t);
-        if (!head) {
-            head = newNode;
-        } else {
-            Node* current = head;
-            while (current->next) {
-                current = current->next;
-            }
-            current->next = newNode;
-        }
-        size++;
-        display();
-    }
-
-    // Вилучити вказаний елемент зі списку (за індексом)
-    void remove(int index) {
-        if (index < 0 || index >= size) {
-            cout << "Неправильний індекс!" << endl;
-            return;
-        }
-        Node* current = head;
-        Node* prev = nullptr;
-        for (int i = 0; i < index; i++) {
-            prev = current;
-            current = current->next;
-        }
-        if (!prev) {
-            head = current->next;
-        } else {
-            prev->next = current->next;
-        }
-        delete current;
-        size--;
-        display();
-    }
-
-    // Визначити кількість елементів у списку
-    int getSize() {
-        cout << "Кількість елементів у списку: " << size << endl;
-        return size;
-    }
-
-    // Поміняти два сусідні елементи місцями після позиції p
-    void swapAfter(int p) {
-        if (p < 0 || p >= size - 1) {
-            cout << "Неможливо виконати обмін для позиції " << p << endl;
-            return;
-        }
-        Node* current = head;
-        for (int i = 0; i < p; i++) {
-            current = current->next;
-        }
-        Node* first = current->next;
-        Node* second = first->next;
-        first->next = second->next;
-        second->next = first;
-        if (current == head && p == 0) {
-            head = second;
-        } else {
-            current->next = second;
-        }
-        display();
-    }
-
-    // Об’єднати два списки в один (дописування другого в кінець першого)
-    void merge(SinglyLinkedList& other) {
-        if (!other.head) return;
-        if (!head) {
-            head = other.head;
-            size = other.size;
-        } else {
-            Node* current = head;
-            while (current->next) {
-                current = current->next;
-            }
-            current->next = other.head;
-            size += other.size;
-        }
-        other.head = nullptr;
-        other.size = 0;
-        display();
-    }
-
-    // Отримати доступ до k-го вузла списку
-    Tourist* getNode(int k) {
-        if (k < 0 || k >= size) {
-            cout << "Неправильний індекс!" << endl;
-            return nullptr;
-        }
-        Node* current = head;
-        for (int i = 0; i < k; i++) {
-            current = current->next;
-        }
-        cout << "Елемент за індексом " << k << ": " << current->data.passport << ", "
-             << current->data.surname << ", " << current->data.days << " днів" << endl;
-        return &current->data;
-    }
-
-    // Включити новий вузол перед k-им вузлом
-    void insertBefore(int k, Tourist t) {
-        if (k < 0 || k > size) {
-            cout << "Неправильний індекс!" << endl;
-            return;
-        }
-        Node* newNode = new Node(t);
-        if (k == 0) {
-            newNode->next = head;
-            head = newNode;
-        } else {
-            Node* current = head;
-            for (int i = 0; i < k - 1; i++) {
-                current = current->next;
-            }
-            newNode->next = current->next;
-            current->next = newNode;
-        }
-        size++;
-        display();
-    }
-
-    // Розбити список на два за позицією k
-    SinglyLinkedList split(int k) {
-        SinglyLinkedList newList;
-        if (k < 0 || k >= size) {
-            cout << "Неправильний індекс для розбиття!" << endl;
-            return newList;
-        }
-        Node* current = head;
-        for (int i = 0; i < k - 1; i++) {
-            if (!current) break;
-            current = current->next;
-        }
-        if (current) {
-            newList.head = current->next;
-            current->next = nullptr;
-            int newSize = 0;
-            Node* temp = newList.head;
-            while (temp) {
-                newSize++;
-                temp = temp->next;
-            }
-            newList.size = newSize;
-            size -= newSize;
-        }
-        cout << "Перший список:" << endl;
-        display();
-        cout << "Другий список:" << endl;
-        newList.display();
-        return newList;
-    }
-
-    // Зробити копію списку
-    SinglyLinkedList copy() {
-        SinglyLinkedList newList;
-        Node* current = head;
-        while (current) {
-            newList.append(current->data);
-            current = current->next;
-        }
-        cout << "Копія списку:" << endl;
-        newList.display();
-        return newList;
-    }
-
-    // Знайти вузол із заданим значенням у полі (наприклад, прізвище)
-    Node* findBySurname(string surname) {
-        Node* current = head;
-        int index = 0;
-        while (current) {
-            if (current->data.surname == surname) {
-                cout << "Знайдено елемент за прізвищем " << surname << " на позиції " << index << endl;
-                return current;
-            }
-            current = current->next;
-            index++;
-        }
-        cout << "Елемент із прізвищем " << surname << " не знайдено" << endl;
-        return nullptr;
-    }
-
-    // Виведення списку
-    void display() {
-        cout << "Поточний стан списку:" << endl;
-        Node* current = head;
-        int index = 0;
-        while (current) {
-            cout << index << ": " << current->data.passport << ", "
-                 << current->data.surname << ", " << current->data.days << " днів" << endl;
-            current = current->next;
-            index++;
-        }
-        if (!head) cout << "Список порожній" << endl;
-        cout << endl;
-    }
-
-    // Деструктор для звільнення пам’яті
-    ~SinglyLinkedList() {
-        clear();
-    }
-};
-
-// Функція для генерації випадкових даних туристів
-Tourist generateTourist(int variant) {
-    Tourist t;
-    t.passport = "XX" + to_string(rand() % 1000000); // Наприклад, XX123456
-    string surnames[] = {"Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez"};
-    t.surname = surnames[rand() % 12];
-    t.days = rand() % (20 * variant) + 1; // Від 1 до 20*N
-    return t;
+    return passport;
 }
 
+// Клас для реалізації стека
+class Stack {
+private:
+    Tourist arr[SIZE];
+    int top;
+public:
+    Stack() { top = -1; }
+    
+    bool isEmpty() { return top == -1; }
+    bool isFull() { return top == SIZE - 1; }
+    
+    void push(Tourist tourist) {
+        if (!isFull()) {
+            arr[++top] = tourist;
+            cout << "Pushed to stack: Passport = " << tourist.passport 
+                 << ", Days = " << tourist.days << endl;
+        } else {
+            cout << "Stack is full!" << endl;
+        }
+    }
+    
+    Tourist pop() {
+        if (!isEmpty()) {
+            Tourist tourist = arr[top--];
+            cout << "Popped from stack: Passport = " << tourist.passport 
+                 << ", Days = " << tourist.days << endl;
+            return tourist;
+        } else {
+            cout << "Stack is empty!" << endl;
+            return {"", 0};
+        }
+    }
+    
+    void display() {
+        if (isEmpty()) {
+            cout << "Stack is empty" << endl;
+            return;
+        }
+        cout << "Stack contents:" << endl;
+        for (int i = 0; i <= top; i++) {
+            cout << "Tourist " << i + 1 << ": Passport = " << arr[i].passport 
+                 << ", Days = " << arr[i].days << endl;
+        }
+    }
+};
+
+// Клас для реалізації черги
+class Queue {
+private:
+    Tourist arr[SIZE];
+    int front, rear;
+public:
+    Queue() { front = 0; rear = -1; }
+    
+    bool isEmpty() { return rear < front; }
+    bool isFull() { return rear == SIZE - 1; }
+    
+    void enqueue(Tourist tourist) {
+        if (!isFull()) {
+            arr[++rear] = tourist;
+            cout << "Enqueued to queue: Passport = " << tourist.passport 
+                 << ", Days = " << tourist.days << endl;
+        } else {
+            cout << "Queue is full!" << endl;
+        }
+    }
+    
+    Tourist dequeue() {
+        if (!isEmpty()) {
+            Tourist tourist = arr[front++];
+            cout << "Dequeued from queue: Passport = " << tourist.passport 
+                 << ", Days = " << tourist.days << endl;
+            return tourist;
+        } else {
+            cout << "Queue is empty!" << endl;
+            return {"", 0};
+        }
+    }
+    
+    void display() {
+        if (isEmpty()) {
+            cout << "Queue is empty" << endl;
+            return;
+        }
+        cout << "Queue contents:" << endl;
+        for (int i = front; i <= rear; i++) {
+            cout << "Tourist " << i - front + 1 << ": Passport = " << arr[i].passport 
+                 << ", Days = " << arr[i].days << endl;
+        }
+    }
+};
+
 int main() {
-    srand(time(NULL));
-    setlocale(LC_ALL, "uk_UA.UTF-8");
-
-    const int T = 12; // Кількість елементів за варіантом
-    const int variant = 8;
-
-    SinglyLinkedList list1, list2;
-
-    // Ініціалізація списку з T=12 елементів
-    cout << "Ініціалізація першого списку:" << endl;
-    for (int i = 0; i < T; i++) {
-        list1.append(generateTourist(variant));
+    srand(time(NULL)); // Ініціалізація генератора випадкових чисел
+    
+    Stack stack;
+    Queue queue;
+    Tourist tourists[SIZE];
+    
+    // Генерація даних про туристів
+    cout << "Generated tourist data:" << endl;
+    for (int i = 0; i < SIZE; i++) {
+        tourists[i].passport = generatePassport();
+        tourists[i].days = (rand() % 321) - 160; // Від -160 до 160
+        cout << "Tourist " << i + 1 << ": Passport = " << tourists[i].passport 
+             << ", Days = " << tourists[i].days << endl;
     }
-
-    // Визначення кількості елементів
-    list1.getSize();
-
-    // Додавання нового елемента
-    cout << "Додавання нового туриста:" << endl;
-    Tourist newTourist = {"YY123456", "Taylor", 10};
-    list1.append(newTourist);
-
-    // Вилучення елемента (наприклад, за індексом 2)
-    cout << "Вилучення елемента за індексом 2:" << endl;
-    list1.remove(2);
-
-    // Обмін двох сусідніх елементів після позиції 3
-    cout << "Обмін елементів після позиції 3:" << endl;
-    list1.swapAfter(3);
-
-    // Доступ до k-го вузла (наприклад, k=5)
-    cout << "Доступ до 5-го елемента:" << endl;
-    list1.getNode(5);
-
-    // Включення нового вузла перед k-им (k=4)
-    cout << "Включення нового вузла перед 4-м:" << endl;
-    Tourist beforeTourist = {"ZZ654321", "Wilson", 15};
-    list1.insertBefore(4, beforeTourist);
-
-    // Пошук за прізвищем
-    cout << "Пошук туриста з прізвищем 'Smith':" << endl;
-    list1.findBySurname("Smith");
-
-    // Створення другого списку
-    cout << "Ініціалізація другого списку:" << endl;
+    cout << endl;
+    
+    // Демонстрація роботи стека
+    cout << "=== Stack Operations ===" << endl;
+    for (int i = 0; i < SIZE; i++) {
+        stack.push(tourists[i]);
+    }
+    stack.display();
+    
+    cout << "\nPopping 5 elements from stack:" << endl;
     for (int i = 0; i < 5; i++) {
-        list2.append(generateTourist(variant));
+        stack.pop();
     }
-
-    // Об’єднання списків
-    cout << "Об’єднання двох списків:" << endl;
-    list1.merge(list2);
-
-    // Розбиття списку на два за позицією 6
-    cout << "Розбиття списку на два за позицією 6:" << endl;
-    SinglyLinkedList newList = list1.split(6);
-
-    // Копіювання списку
-    cout << "Копіювання списку:" << endl;
-    SinglyLinkedList copyList = list1.copy();
-
-    // Очищення списку
-    cout << "Очищення першого списку:" << endl;
-    list1.clear();
-
+    stack.display();
+    
+    // Демонстрація роботи черги
+    cout << "\n=== Queue Operations ===" << endl;
+    for (int i = 0; i < SIZE; i++) {
+        queue.enqueue(tourists[i]);
+    }
+    queue.display();
+    
+    cout << "\nDequeuing 5 elements from queue:" << endl;
+    for (int i = 0; i < 5; i++) {
+        queue.dequeue();
+    }
+    queue.display();
+    
     return 0;
 }
