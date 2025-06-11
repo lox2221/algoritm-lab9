@@ -1,162 +1,157 @@
+
 #include <iostream>
+#include <string>
 #include <cstdlib>
 #include <ctime>
-#include <string>
+#include <iomanip>
+
 using namespace std;
 
-#define SIZE 29 // Кількість елементів: (10 * 8) % 51 = 29
-
-// Структура для зберігання даних про туриста
+// Структура для даних туриста
 struct Tourist {
-    string passport; // Код паспорта (2 літери + 6 цифр)
-    int days;       // Кількість днів
-};
+    int passportCode;
+    string surname;
+    int days;
 
-// Функція для генерації коду паспорта
-string generatePassport() {
-    string passport = "";
-    passport += char('A' + rand() % 26); // Перша літера
-    passport += char('A' + rand() % 26); // Друга літера
-    for (int i = 0; i < 6; i++) {
-        passport += to_string(rand() % 10); // 6 цифр
-    }
-    return passport;
-}
-
-// Клас для реалізації стека
-class Stack {
-private:
-    Tourist arr[SIZE];
-    int top;
-public:
-    Stack() { top = -1; }
-    
-    bool isEmpty() { return top == -1; }
-    bool isFull() { return top == SIZE - 1; }
-    
-    void push(Tourist tourist) {
-        if (!isFull()) {
-            arr[++top] = tourist;
-            cout << "Pushed to stack: Passport = " << tourist.passport 
-                 << ", Days = " << tourist.days << endl;
-        } else {
-            cout << "Stack is full!" << endl;
-        }
-    }
-    
-    Tourist pop() {
-        if (!isEmpty()) {
-            Tourist tourist = arr[top--];
-            cout << "Popped from stack: Passport = " << tourist.passport 
-                 << ", Days = " << tourist.days << endl;
-            return tourist;
-        } else {
-            cout << "Stack is empty!" << endl;
-            return {"", 0};
-        }
-    }
-    
-    void display() {
-        if (isEmpty()) {
-            cout << "Stack is empty" << endl;
-            return;
-        }
-        cout << "Stack contents:" << endl;
-        for (int i = 0; i <= top; i++) {
-            cout << "Tourist " << i + 1 << ": Passport = " << arr[i].passport 
-                 << ", Days = " << arr[i].days << endl;
-        }
+    void print() const {
+        cout << left << setw(10) << passportCode << setw(15) << surname << setw(5) << days << endl;
     }
 };
 
-// Клас для реалізації черги
-class Queue {
+// Вузол для двонаправленого зв’язного списку (дек)
+struct Node {
+    Tourist data;
+    Node* prev;
+    Node* next;
+    Node(const Tourist& t) : data(t), prev(nullptr), next(nullptr) {}
+};
+
+// Клас для дека
+class Deque {
 private:
-    Tourist arr[SIZE];
-    int front, rear;
+    Node* front;
+    Node* back;
+    int size;
+
 public:
-    Queue() { front = 0; rear = -1; }
-    
-    bool isEmpty() { return rear < front; }
-    bool isFull() { return rear == SIZE - 1; }
-    
-    void enqueue(Tourist tourist) {
-        if (!isFull()) {
-            arr[++rear] = tourist;
-            cout << "Enqueued to queue: Passport = " << tourist.passport 
-                 << ", Days = " << tourist.days << endl;
-        } else {
-            cout << "Queue is full!" << endl;
+    Deque() : front(nullptr), back(nullptr), size(0) {}
+
+    ~Deque() {
+        while (front) {
+            Node* temp = front;
+            front = front->next;
+            delete temp;
         }
     }
-    
-    Tourist dequeue() {
-        if (!isEmpty()) {
-            Tourist tourist = arr[front++];
-            cout << "Dequeued from queue: Passport = " << tourist.passport 
-                 << ", Days = " << tourist.days << endl;
-            return tourist;
+
+    void push_front(const Tourist& t) {
+        Node* newNode = new Node(t);
+        if (size == 0) {
+            front = back = newNode;
         } else {
-            cout << "Queue is empty!" << endl;
-            return {"", 0};
+            newNode->next = front;
+            front->prev = newNode;
+            front = newNode;
         }
+        size++;
     }
-    
-    void display() {
-        if (isEmpty()) {
-            cout << "Queue is empty" << endl;
+
+    void push_back(const Tourist& t) {
+        Node* newNode = new Node(t);
+        if (size == 0) {
+            front = back = newNode;
+        } else {
+            newNode->prev = back;
+            back->next = newNode;
+            back = newNode;
+        }
+        size++;
+    }
+
+    void pop_front() {
+        if (size == 0) {
+            cout << "Дек порожній!" << endl;
             return;
         }
-        cout << "Queue contents:" << endl;
-        for (int i = front; i <= rear; i++) {
-            cout << "Tourist " << i - front + 1 << ": Passport = " << arr[i].passport 
-                 << ", Days = " << arr[i].days << endl;
+        Node* temp = front;
+        front = front->next;
+        if (front) {
+            front->prev = nullptr;
+        } else {
+            back = nullptr;
         }
+        delete temp;
+        size--;
+    }
+
+    void pop_back() {
+        if (size == 0) {
+            cout << "Дек порожній!" << endl;
+            return;
+        }
+        Node* temp = back;
+        back = back->prev;
+        if (back) {
+            back->next = nullptr;
+        } else {
+            front = nullptr;
+        }
+        delete temp;
+        size--;
+    }
+
+    void print() const {
+        cout << "Вміст дека:" << endl;
+        cout << left << setw(10) << "Паспорт" << setw(15) << "Прізвище" << setw(5) << "Дні" << endl;
+        cout << string(30, '-') << endl;
+        Node* current = front;
+        while (current) {
+            current->data.print();
+            current = current->next;
+        }
+        cout << endl;
     }
 };
 
 int main() {
-    srand(time(NULL)); // Ініціалізація генератора випадкових чисел
-    
-    Stack stack;
-    Queue queue;
-    Tourist tourists[SIZE];
-    
-    // Генерація даних про туристів
-    cout << "Generated tourist data:" << endl;
-    for (int i = 0; i < SIZE; i++) {
-        tourists[i].passport = generatePassport();
-        tourists[i].days = (rand() % 321) - 160; // Від -160 до 160
-        cout << "Tourist " << i + 1 << ": Passport = " << tourists[i].passport 
-             << ", Days = " << tourists[i].days << endl;
+    srand(time(NULL));
+    Deque deque;
+    const int T = 12; // Кількість туристів (варіант 8)
+    const int N = 8;  // Номер варіанту
+    const int MIN_VAL = -20 * N; // -160
+    const int MAX_VAL = 20 * N;  // 160
+
+    // Ініціалізація 12 туристів
+    cout << "Ініціалізація 12 туристів із випадковими даними:" << endl;
+    for (int i = 0; i < T; i++) {
+        Tourist t;
+        t.passportCode = MIN_VAL + rand() % (MAX_VAL - MIN_VAL + 1);
+        t.surname = "Турист" + to_string(i + 1);
+        t.days = MIN_VAL + rand() % (MAX_VAL - MIN_VAL + 1);
+        deque.push_back(t);
     }
-    cout << endl;
-    
-    // Демонстрація роботи стека
-    cout << "=== Stack Operations ===" << endl;
-    for (int i = 0; i < SIZE; i++) {
-        stack.push(tourists[i]);
-    }
-    stack.display();
-    
-    cout << "\nPopping 5 elements from stack:" << endl;
-    for (int i = 0; i < 5; i++) {
-        stack.pop();
-    }
-    stack.display();
-    
-    // Демонстрація роботи черги
-    cout << "\n=== Queue Operations ===" << endl;
-    for (int i = 0; i < SIZE; i++) {
-        queue.enqueue(tourists[i]);
-    }
-    queue.display();
-    
-    cout << "\nDequeuing 5 elements from queue:" << endl;
-    for (int i = 0; i < 5; i++) {
-        queue.dequeue();
-    }
-    queue.display();
-    
+
+    // Виведення початкового дека
+    deque.print();
+
+    // Демонстрація операцій
+    cout << "Додавання нового туриста на початок:" << endl;
+    Tourist t1 = {1000, "НовийТурист1", 50};
+    deque.push_front(t1);
+    deque.print();
+
+    cout << "Додавання нового туриста в кінець:" << endl;
+    Tourist t2 = {2000, "НовийТурист2", 75};
+    deque.push_back(t2);
+    deque.print();
+
+    cout << "Видалення туриста з початку:" << endl;
+    deque.pop_front();
+    deque.print();
+
+    cout << "Видалення туриста з кінця:" << endl;
+    deque.pop_back();
+    deque.print();
+
     return 0;
 }
